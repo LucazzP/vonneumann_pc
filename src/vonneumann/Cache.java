@@ -13,7 +13,7 @@ public class Cache extends Memoria {
     @Override
     public int read(int pos) throws EnderecoInvalido {
         // Se estiver no cache, le do cache
-        if(isOnCache(pos)) {
+        if (isOnCache(pos)) {
             return super.read(pos - inicio);
         }
         syncCacheRam(pos);
@@ -23,7 +23,7 @@ public class Cache extends Memoria {
     @Override
     public void write(int pos, int valor) throws EnderecoInvalido {
         // Se estiver no cache, le do cache
-        if(isOnCache(pos)) {
+        if (isOnCache(pos)) {
             super.write(pos - inicio, valor);
             return;
         }
@@ -41,16 +41,18 @@ public class Cache extends Memoria {
 
     private void syncCacheRam(int pos) throws EnderecoInvalido {
         // Se nao encontra, copia o cache para a ram
-        if(inicio > -1) {
+        if (inicio > -1) {
             for (int i = inicio; i < fim(); i++) {
                 ram.write(i, super.read(i - inicio));
             }
         }
         // Seta a nova posicao de inicio
         inicio = pos;
-        // Copia a ram para o cache
+        // Copia a ram para o cache se necessario
         for (int i = pos; i < fim(); i++) {
-            super.write(i - inicio, ram.read(i));
+            if (ram.read(i) != super.read(i - inicio)) {
+                super.write(i - inicio, ram.read(i));
+            }
         }
     }
 }
