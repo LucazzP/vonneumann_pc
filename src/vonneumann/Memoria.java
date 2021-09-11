@@ -1,5 +1,7 @@
 package vonneumann;
 
+import java.util.Arrays;
+
 public class Memoria {
     protected int tam = 0;
     private final int[] dados;
@@ -25,5 +27,13 @@ public class Memoria {
 
     private boolean isNotValid(int ender) throws EnderecoInvalido {
         return ender < 0 || ender >= tam;
+    }
+
+    @Override
+    public String toString() {
+        return "Memoria{" +
+                "tam=" + tam +
+                ", dados=" + Arrays.toString(dados) +
+                '}';
     }
 }
