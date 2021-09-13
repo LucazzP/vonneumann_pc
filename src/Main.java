@@ -12,7 +12,7 @@ public class Main {
         CPU cpu = new CPU(cacheL1, io);
 
         try {
-            final int start = 100;
+            final int start = 10;
 
             ram.write(start, 118);
             ram.write(start + 1, 200);

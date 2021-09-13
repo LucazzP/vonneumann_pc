@@ -27,13 +27,22 @@ public class CacheL1 extends Memoria {
     private int t; // 11 bits depois de r
     private int s; // concatenação do r e t
     private Tagged<Memoria> memoriaTagged;
+    private int wTamBits;
+    private int rTamBits;
+    private int tTamBits;
 
     void setVarsWRTS(int pos) {
-        memoriaTagged = null;
-        w = pos & 0b111111; // 6 ultimos bits de x
-        r = (pos & 0b1111111000000) >> 6; // 7 bits depois de w
-        t = (pos & 0b111111111110000000000000) >> 13; // 11 bits depois de r
-        s = (pos & 0b111111111111111110000000) >> 6; // concatenação do r e t
+        wTamBits = tamKCacheLineNBits;
+        rTamBits = Integer.bitCount(super.tam - 1);
+        tTamBits = Integer.bitCount(ram.tam - 1) - rTamBits - wTamBits;
+
+        int wrTamBits = wTamBits + rTamBits;
+        int rtTamBits = rTamBits + tTamBits;
+
+        w = pos & (int) Math.pow(2, wTamBits) - 1; // wTamBits ultimos bits de x
+        r = (pos & ((int) Math.pow(2, rTamBits) - 1 << wTamBits)) >> wTamBits; // 7 bits depois de w
+        t = (pos & ((int) Math.pow(2, tTamBits) - 1 << wrTamBits)) >> wrTamBits; // 11 bits depois de r
+        s = (pos & ((int) Math.pow(2, rtTamBits) - 1 << wTamBits)) >> wTamBits; // concatenação do r e t
         memoriaTagged = cacheLines.get(r);
     }
 
@@ -65,36 +74,34 @@ public class CacheL1 extends Memoria {
         cacheLines.set(r, memoriaTagged);
     }
 
-    /// True: Cache Hit
-    /// False: Cache miss
+    // False: Cache Hit
+    // True: Cache miss
     private boolean isNotOnCache() {
         return memoriaTagged.data == null || memoriaTagged.tag != t;
     }
 
     private void syncCacheRam() throws EnderecoInvalido {
-        // Se não existe cache criado no cacheLine, cria e popula a cache com os valores da RAM
-        if (memoriaTagged.data == null) {
-            Memoria memCache = new Memoria(tamKCacheLineNBits);
-
-            int inicio = s + (r * kTamCacheLine); // s + deslocamento
-            int pos = 0;
-            for (int i = inicio; i < inicio + kTamCacheLine; i++) {
-                memCache.write(pos, ram.read(i));
-                pos++;
-            }
-
-            memoriaTagged = new Tagged<>(t, memCache);
-            cacheLines.set(r, memoriaTagged);
-        }
-
         // Copia o cache para a ram se necessario
         if (memoriaTagged.modified) {
-            int inicio = s + (r * kTamCacheLine); // s + deslocamento
+            int inicio = s << wTamBits;
             int pos = 0;
             for (int i = inicio; i < inicio + kTamCacheLine; i++) {
                 ram.write(i, memoriaTagged.data.read(pos));
                 pos++;
             }
         }
+
+        // Cria e popula a cache com os valores da RAM
+        Memoria memCache = new Memoria(wTamBits);
+
+        int inicio = s << wTamBits;
+        int pos = 0;
+        for (int i = inicio; i < inicio + kTamCacheLine; i++) {
+            memCache.write(pos, ram.read(i));
+            pos++;
+        }
+
+        memoriaTagged = new Tagged<>(t, memCache);
+        cacheLines.set(r, memoriaTagged);
     }
 }
