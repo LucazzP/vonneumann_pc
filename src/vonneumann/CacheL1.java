@@ -32,12 +32,12 @@ public class CacheL1 extends Memoria {
     private int tTamBits;
 
     void setVarsWRTS(int pos) {
-        wTamBits = tamKCacheLineNBits;
-        rTamBits = Integer.bitCount(super.tam - 1);
-        tTamBits = Integer.bitCount(ram.tam - 1) - rTamBits - wTamBits;
+        wTamBits = tamKCacheLineNBits; // 6
+        rTamBits = Integer.bitCount(super.tam - 1); // 7
+        tTamBits = Integer.bitCount(ram.tam - 1) - rTamBits - wTamBits; // 11
 
-        int wrTamBits = wTamBits + rTamBits;
-        int rtTamBits = rTamBits + tTamBits;
+        int wrTamBits = wTamBits + rTamBits; // 13
+        int rtTamBits = rTamBits + tTamBits; // 18
 
         w = pos & (int) Math.pow(2, wTamBits) - 1; // wTamBits ultimos bits de x
         r = (pos & ((int) Math.pow(2, rTamBits) - 1 << wTamBits)) >> wTamBits; // 7 bits depois de w
